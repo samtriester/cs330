@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <style>
+    table,
+    th,
+    td {
+      border: 1px solid;
+      margin: auto;
+    }
+
+    #outer {
+      width: 100%;
+      text-align: center;
+    }
+
+    .inner {
+      display: inline-block;
+    }
+  </style>
+
+  <meta charset="utf-8">
+  <title>My Calendar</title>
+</head>
+
+<body>
+  <div id="newEvent">CLick Here to Create new Event</div>
+  <div id="newTag">Click Here to Create a new Tag</div>
+    <div id="editEvent"></div>
+    <div id="deleteEvent"></div>
+  <div id="newGroup">Click Here to Add a New Group</div>
+  <div id="newMemb">Click Here to Add a New Member to an Existing Group</div>
+  <div id="remMemb">Click Here to Remove a Member from an Existing Group</div>
+      <div id="share">Click Here to Share your Calendar with a User</div>
+
+  Click a Tag to Filter:
+  <ul id="tags"></ul>
+  <div id="outer">
+    <div class="inner"><button id="prev">Previous</button></div>
+    <div class="inner">
+      <p id='currMonth'>March 2022</p>
+    </div>
+    <div class="inner"><button id="next">Next</button></div>
+  </div>
+
+  <table>
+    <th>Sunday</th>
+    <th>Monday</th>
+    <th>Tuesday</th>
+    <th>Wednesday</th>
+    <th>Thursday</th>
+    <th>Friday</th>
+    <th>Saturday</th>
+    <tr>
+      <td id="00"></td>
+      <td id="10"></td>
+      <td id="20"></td>
+      <td id="30"></td>
+      <td id="40"></td>
+      <td id="50"></td>
+      <td id="60"></td>
+    </tr>
+    <tr>
+      <td id="01"></td>
+      <td id="11"></td>
+      <td id="21"></td>
+      <td id="31"></td>
+      <td id="41"></td>
+      <td id="51"></td>
+      <td id="61"></td>
+    </tr>
+    <tr>
+      <td id="02"></td>
+      <td id="12"></td>
+      <td id="22"></td>
+      <td id="32"></td>
+      <td id="42"></td>
+      <td id="52"></td>
+      <td id="62"></td>
+    </tr>
+    <tr>
+      <td id="03"></td>
+      <td id="13"></td>
+      <td id="23"></td>
+      <td id="33"></td>
+      <td id="43"></td>
+      <td id="53"></td>
+      <td id="63"></td>
+    </tr>
+    <tr>
+      <td id="04"></td>
+      <td id="14"></td>
+      <td id="24"></td>
+      <td id="34"></td>
+      <td id="44"></td>
+      <td id="54"></td>
+      <td id="64"></td>
+    </tr>
+    <tr>
+      <td id="05"> </td>
+      <td id="15"> </td>
+      <td id="25"> </td>
+      <td id="35"> </td>
+      <td id="45"> </td>
+      <td id="55"> </td>
+      <td id="65"> </td>
+    </tr>
+  </table>
+
+  <!--Add Event form-->
+
+
+  <!--Edit Event form-->
+
+  <!--Delete Event form-->
+
+
+
+  <!--Add group-->
+
+  <script type="text/javascript" src="events.js"></script>
+  <script type="text/javascript" src="groups.js"></script>
+
+  <script>
+    
+    //loadAllTags();
+    let currMonth = new Month(2022, 2);
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+
+
+
+(function(){Date.prototype.deltaDays=function(c){return new Date(this.getFullYear(),this.getMonth(),this.getDate()+c)};Date.prototype.getSunday=function(){return this.deltaDays(-1*this.getDay())}})();
+function Week(c){this.sunday=c.getSunday();this.nextWeek=function(){return new Week(this.sunday.deltaDays(7))};this.prevWeek=function(){return new Week(this.sunday.deltaDays(-7))};this.contains=function(b){return this.sunday.valueOf()===b.getSunday().valueOf()};this.getDates=function(){for(var b=[],a=0;7>a;a++)b.push(this.sunday.deltaDays(a));return b}}
+function Month(c,b){this.year=c;this.month=b;this.nextMonth=function(){return new Month(c+Math.floor((b+1)/12),(b+1)%12)};this.prevMonth=function(){return new Month(c+Math.floor((b-1)/12),(b+11)%12)};this.getDateObject=function(a){return new Date(this.year,this.month,a)};this.getWeeks=function(){var a=this.getDateObject(1),b=this.nextMonth().getDateObject(0),c=[],a=new Week(a);for(c.push(a);!a.contains(b);)a=a.nextWeek(),c.push(a);return c}};
+//kinda janky workaround for no .haveEventListener method
+let x = 1000;
+//next and previous button
+document.getElementById("next").addEventListener("click", function(event){
+	currMonth = currMonth.nextMonth(); // Previous month would be currentMonth.prevMonth()
+	updateCalendar(); // Whenever the month is updated, we'll need to re-render the calendar in HTML
+}, false);
+document.getElementById("prev").addEventListener("click", function(event){
+	currMonth = currMonth.prevMonth(); // Previous month would be currentMonth.prevMonth()
+	updateCalendar(); // Whenever the month is updated, we'll need to re-render the calendar in HTML
+}, false);
+
+//refresh calendar with new month/events
+function updateCalendar(){
+  document.getElementById("share").addEventListener("click", shareForm,false);
+  document.getElementById("newGroup").addEventListener("click",groupForm ,false);
+  document.getElementById("newMemb").addEventListener("click",newMembForm ,false);
+  document.getElementById("remMemb").addEventListener("click",remMembForm ,false);
+  document.getElementById("newTag").addEventListener("click", tagForm,false);
+  document.getElementById("newEvent").addEventListener("click",formFunction ,false);
+  for(let j=0; j<6; j++){
+  for(let i = 0; i<7; i++){
+    //remove previous month and listeners
+document.getElementById(i+""+j).textContent="";
+// //if so that we only remove listeners that already exist
+// if(x!=1000){
+// document.getElementById(i+""+j).removeEventListener("click", formFunction, false);
+// }
+  }
+}
+//change month name
+  document.getElementById("currMonth").textContent=monthNames[currMonth.month]+" "+ currMonth.year;
+  
+  //change month dates
+  let weeks = currMonth.getWeeks();
+  let domWeek = 0;
+  let domDay=0;
+  for(let w in weeks){
+    
+    let days = weeks[w].getDates();
+		if(tag="nothing"){
+      //get all events
+    }
+    else{
+      //get events only for tagname
+    }
+		for(let d in days){
+     if(days[d].getDate()<domDay+7 && days[d].getDate()>domDay-7){
+      let x= days[d].getDate();
+		document.getElementById(days[d].getDay()+""+domWeek).innerHTML=x;
+    //https://stackoverflow.com/questions/8043026/how-to-format-numbers-by-prepending-0-to-single-digit-numbers
+    //ADDING classname that is unique (date of element)
+    document.getElementById(days[d].getDay()+""+domWeek).className= currMonth.year.toString() + "-" + (currMonth.month + 1).toLocaleString('en-US', {
+                                                                                                        minimumIntegerDigits: 2,
+                                                                                                        useGrouping: false
+                                                                                                      }).toString() + "-" + days[d].getDate();   
+ 
+    domDay++;
+     }
+		}
+    domWeek++;
+  } 
+  loadAllEvents();
+  loadAllTags();
+}
+updateCalendar();
+//create new group
+function groupForm(){
+//document.getElementById("newGroup").innerHTML="Group Name:<input type=\"text\" name=\"group_name\" required><input type=\"hidden\" value=\"True\" name=\"isCreate\"><input type=\"hidden\" value=\"False\" name=\"isAdd\"><input type=\"hidden\" value=\"False\" name=\"isRemove\"><input type=\"submit\" id=\"newGroupSub\" value=\"Post\" name=\"submit\">";
+ document.getElementById("newGroup").innerHTML = "Create New Group<input type=\"text\" name=\"group_name\" id='group_name'>"
+                                                                  +"<input type=\"hidden\" value=\"True\" name=\"isCreate\">"
+                                                                  +"<input type=\"hidden\" value=\"False\" name=\"isAdd\">"
+                                                                  +"<input type=\"hidden\" value=\"False\" name=\"isRemove\">"
+                                                                  +"<button id=\"newGroupSub\">Post</button>";
+    //document.getElementById("newGroupSub").addEventListener("click", createGroup, false);
+  document.getElementById("newGroup").removeEventListener("click", groupForm, false);
+  document.getElementById("newGroupSub").addEventListener("click", createGroup, false);
+  //TODO add lines into createGroup
+// <!--   document.getElementById("newGroupSub").addEventListener("click", function inner0(){
+//        document.getElementById("newGroup").innerHTML="Click Here to Create a New Group";
+//        //document.getElementById("newGroupSub").removeEventListener("click", inner0, false);
+// const newGroupData= { group_name: documents.getElementById('group_name').value, isCreate: documents.getElementbyName('isCreate')[0].value, isAdd: documents.getElementbyName('isAdd')[0].value, isRemove: documents.getElementbyName('isRemove')[0].value};
+//     fetch("groups.php", {
+//         method: "POST",
+//         body: JSON.stringify(newGroupData)
+//     });
+//        setTimeout(updateCalendar,10); 
+//         },false); -->
+         
+}
+document.getElementById("newGroup").addEventListener("click",groupForm ,false);
+    
+function formFunction() {
+      document.getElementById("newEvent").innerHTML="Title:<input type=\"text\"  name=\"title\" id=\"newTitle\" required><br>Body:<input type=\"text\"  name=\"newBody\" id=\"newBody\"><br>Date:<input type=\"text\" name=\"newDate\" id=\"newDate\" required><br>Tag:<input type=\"text\"  name=\"tag\" id=\"newTag\"><br>Group:<input type=\"text\"  name=\"group\" id=\"newGroup\"><br><input type=\"submit\" id=\"eventSub\" value=\"Post\" name=\"submit\">";
+      document.getElementById("newEvent").removeEventListener("click", formFunction, false);
+      document.getElementById("eventSub").addEventListener("click", function inner(){
+        const newEventData= { "token": window.token, "title": document.getElementById('newTitle').value, "body": document.getElementById('newBody').value, "date": document.getElementById('newDate').value, "tag": document.getElementById('newTag').value, "group": document.getElementById('newGroup').value };
+       document.getElementById("newEvent").innerHTML="Click Here to Add a New Event";
+       //document.getElementById("eventSub").removeEventListener("click", inner, false);
+    fetch("addEvent.php", {
+        method: "POST",
+        body: JSON.stringify(newEventData),
+        headers: { 'content-type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(newEventData => {
+            console.log(JSON.stringify(newEventData, null, 2));
+            loadAllEvents();
+    }).catch(err => console.error(err));
+       setTimeout(updateCalendar,10);
+        },false);
+      }
+      document.getElementById("newEvent").addEventListener("click",formFunction ,false);
+//add new member to group
+function newMembForm(){
+//document.getElementById("newMemb").innerHTML="Group Name:<input type=\"text\" name=\"group_name\" required><br>User to Add: <input type=\"text\" name=\"user\" required><input type=\"hidden\" value=\"False\" name=\"isCreate\"><input type=\"hidden\" value=\"True\" name=\"isAdd\"><input type=\"hidden\" value=\"False\" name=\"isRemove\"><br><input type=\"submit\" id=\"newMembSub\" value=\"Post\" name=\"submit\">";
+  document.getElementById("newMemb").innerHTML = 
+      "Group Name:<input type=\"text\" name=\"group_name\">"
+      +"<br>"
+      +"User to Add: "
+      +"<input type=\"text\" name=\"user\">"
+      +"<input type=\"hidden\" value=\"False\" name=\"isCreate\">"
+      +"<input type=\"hidden\" value=\"True\" name=\"isAdd\">"
+      +"<input type=\"hidden\" value=\"False\" name=\"isRemove\">"
+      +"<br>"
+      +"<input type=\"submit\" id=\"newMembSub\" value=\"Post\" name=\"submit\">";
+      document.getElementById("newMembSub").addEventListener("click", addNewMemberToGroup, false);
+  document.getElementById("newMemb").removeEventListener("click", newMembForm, false);
+  //TODO add two lines to addNEwmMEber to Group
+// <!-- document.getElementById("newMembSub").addEventListener("click", function inner1(){
+//        document.getElementById("newMemb").innerHTML="Click Here to Add a New Member to an Existing Group";
+//        //document.getElementById("newMembSub").removeEventListener("click", inner1, false);
+//        setTimeout(updateCalendar,10); 
+//         },false); -->
+         
+}
+document.getElementById("newMemb").addEventListener("click",newMembForm ,false);
+//remove user from group
+function remMembForm(){
+//document.getElementById("remMemb").innerHTML="Group Name:<input type=\"text\" name=\"group_name\" required><br>User to Remove: <input type=\"text\" name=\"user\" required><input type=\"hidden\" value=\"False\" name=\"isCreate\"><input type=\"hidden\" value=\"False\" name=\"isAdd\"><input type=\"hidden\" value=\"True\" name=\"isRemove\"><input type=\"submit\" id=\"remMembSub\" value=\"Post\" name=\"submit\">";
+document.getElementById("remMemb").innerHTML = 
+      "Group Name:<input type=\"text\" name=\"group_name\">"
+      +"<br>"
+      +"User to Remove: <input type=\"text\" name=\"user\">"
+      +"<input type=\"hidden\" value=\"False\" name=\"isCreate\">"
+      +"<input type=\"hidden\" value=\"False\" name=\"isAdd\">"
+      +"<input type=\"hidden\" value=\"True\" name=\"isRemove\">"
+      +"<input type=\"submit\" id=\"remMembSub\" value=\"Post\" name=\"submit\">";
+      document.getElementById("remMembSub").addEventListener("click", removeMemberFromGroup, false);
+  document.getElementById("remMemb").removeEventListener("click", remMembForm, false);
+  //TODO add lines into remove MEmber form gorup
+// <!-- document.getElementById("remMembSub").addEventListener("click", function inner2(){
+//        document.getElementById("remMemb").innerHTML="Click Here to Remove a Member from an Existing Group";
+//        //document.getElementById("remMembSub").removeEventListener("click", inner2, false);
+//        setTimeout(updateCalendar,10); 
+//         },false); -->
+         
+}
+document.getElementById("remMemb").addEventListener("click",remMembForm ,false);
+//create new tag
+function tagForm(){
+document.getElementById("newTag").innerHTML="Tag Name:<input type=\"text\" name=\"tag_name\"><input type=\"submit\" id=\"newTagSub\" value=\"Post\" name=\"submit\">";
+document.getElementById("newTag").removeEventListener("click", tagForm, false);
+document.getElementById("newTagSub").addEventListener("click", function inner5(){
+       document.getElementById("newTag").innerHTML="Click Here to Create a New Tag";
+       //document.getElementById("newGroupSub").removeEventListener("click", inner5, false);
+       setTimeout(updateCalendar,10); 
+        },false);
+        
+}
+document.getElementById("newTag").addEventListener("click", tagForm,false);
+//share calendar
+function shareForm(){
+document.getElementById("share").innerHTML="User:<input type=\"text\" name=\"user\" id = \"shareUser\"required><input type=\"submit\" id=\"shareSub\" value=\"Share\" name=\"submit\">";
+document.getElementById("share").removeEventListener("click", shareForm, false);
+document.getElementById("shareSub").addEventListener("click", function inner5(){
+  const data={"token": window.token, "share" : document.getElementById("shareUser").value };
+  fetch("share.php", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { 'content-type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+            console.log(JSON.stringify(data, null, 2));
+            loadAllEvents();
+    }).catch(err => console.error(err));
+       document.getElementById("share").innerHTML="Click Here to Share your Calendar with a User";
+       setTimeout(updateCalendar,10); 
+       //document.getElementById("newGroupSub").removeEventListener("click", inner5, false);
+        },false);
+        
+      }
+document.getElementById("share").addEventListener("click", shareForm,false);
+function tags(){
+  //get all users tag names, spit list out, on click filter i.e. call update with a parameter changed
+let tags = "";
+let jsonData = JSON.parse(); //all tags
+for (let j=0; j<jsonData.i; j++){
+  tags=tags+"<li id="+j+"tag>"+jsonData.j+"</li>";
+  document.getElementById(j+"tag").addEventListener("click", function(){
+updateCalendar(jsonData.j);
+document.getElementById(j+"tag").style.display="strong"; //bold tag
+  },false);
+}
+document.getElementById("tags").innerHTML=tags;
+}
+//uncomment below when tags is fully done
+//tags();
+    </script>
+  </body>
+</html>
+
+<!-- 
+/*
+dit and delete buttons do stuff
+Change event listener for dates
+shared
+CLick to add tag
+*? -->

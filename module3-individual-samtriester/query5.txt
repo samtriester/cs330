@@ -1,0 +1,7 @@
+select id, email_address, avg(grades.grade) as avg_grade from students join grades on (students.id=grades.student_id) where first_name='Jack' and last_name='Johnson';
++-----+------------------------------+-----------+
+| id  | email_address                | avg_grade |
++-----+------------------------------+-----------+
+| 257 | jjmuzak@brushfirerecords.com | 96.125000 |
++-----+------------------------------+-----------+
+1 row in set (0.00 sec)

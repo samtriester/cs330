@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS Calculator</title>
+</head>
+<body>
+    <p>Pick an operation and type in your first and second numbers.</p>
+        <label for="firstNum">First Number:</label>
+        <input type="number" name="firstNum" id="firstNum" step="any" required>
+        <label for="secondNum">Second Number:</label>
+        <input type="number" name="secondNum" id="secondNum" step="any" required>
+        <br>
+        <input type="radio" name="operation" id="multiply" value="0" required>
+        <label>x</label><br>
+        <input type="radio" name="operation" id="divide" value="1">
+        <label>/</label><br>
+        <input type="radio" name="operation" id="add" value="2">
+        <label>+</label><br>
+        <input type="radio" name="operation" id="subtract" value="3">
+        <label>-</label><br>
+        <br>
+        <p id = "result"></p>
+        
+        <script>
+            function calculate(){
+                const num1 = document.getElementById("firstNum").value;
+                
+                const num2 = document.getElementById("secondNum").value;
+                const operation = checkFruit();
+                let total =0;
+                
+                switch (operation) {
+                    case "0":
+                            total = num1*num2;
+                            document.getElementById("result").textContent = num1+" * "+num2 + " = " +total;
+                            break;
+                    case "1":
+                            if(num2==0){
+                                document.getElementById("result").textContent ="Invalid input: divide by 0!";
+                            }
+                            else{
+                                total=num1/num2;
+                                document.getElementById("result").textContent =num1+" / "+num2 + " = " +total;
+                        }
+                            break;
+                    case "2":
+                            total =parseFloat(num1)+parseFloat(num2);
+                            document.getElementById("result").textContent =num1+" + "+num2 + " = " +total;
+                            break;
+                    case "3":
+                            total = num1 -num2;
+                            document.getElementById("result").textContent =num1+" - "+num2 + " = " +total;
+                 }
+            }
+            function checkFruit(){
+                const fruit_radio_pointers = document.getElementsByName("operation");
+                let which_fruit = null;
+                for(let i=0; i<fruit_radio_pointers.length; i++){
+                    if(fruit_radio_pointers[i].checked){
+                        which_fruit = fruit_radio_pointers[i].value;  
+                        break;            
+                    }    
+                }
+                return which_fruit;
+            }
+            document.getElementById("firstNum").addEventListener("keyup", calculate, false);
+            document.getElementById("secondNum").addEventListener("keyup", calculate, false);
+            document.getElementById("multiply").addEventListener("click", calculate, false);
+            document.getElementById("divide").addEventListener("click", calculate, false);
+            document.getElementById("add").addEventListener("click", calculate, false);
+            document.getElementById("subtract").addEventListener("click", calculate, false);
+        </script>
+</body>
+</html>

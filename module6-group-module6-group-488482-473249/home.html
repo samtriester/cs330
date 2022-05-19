@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+    <title>Chatroom</title>
+    <style>
+        #functionality {
+            display: none;
+        }
+
+        #message {
+            display: none;
+        }
+
+        #ownerPrivileges {
+            display: none;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript">
+        let socketio = io.connect();
+
+
+        //********************* */
+        // CLIENT CALL BACKS
+        //********************* */
+
+        let name, rm, user;
+        let mutedID = 0;
+
+        let filter = false;
+
+        //todo room changing with other user bug
+        socketio.on("message_to_client", function (data) {
+            //Append an HR thematic break and the escaped HTML of the new message
+            shouldMute = false;
+            muteds = document.getElementById("mutedUsers").childNodes;
+            log = document.getElementById('chatlog').childNodes;
+            for (let i = 0; i < muteds.length; i++) {
+                if (data['message'].startsWith(muteds[i].textContent)) {
+                    shouldMute = true;
+                }
+            }
+            if (filter) {
+                const curseWords = ["shit", "piss", "fuck", "cunt", "cocksucker", "motherfucker", "tits"];
+                for (const word of curseWords) {
+                    let string = " ";
+                    for (let j = 0; j < word.length; j++) {
+                        string = string + "*";
+                    }
+                    string = string + " ";
+                    data['message'] = data['message'].replace(" " + word + " ", string);
+                }
+            }
+            if (!shouldMute) {
+                document.getElementById("chatlog").appendChild(document.createElement("hr"));
+                document.getElementById("chatlog").appendChild(document.createTextNode(data['message']));
+            }
+        });
+        socketio.on("room_created", function (data) {
+            document.getElementById('roomCreatedResult').textContent = "Room \"" + data['name'] + "\" succesfully created!";
+            //console.log("room_Created: " + JSON.stringify(data, null, 2));
+            // const roomListItem = document.createElement("li");
+            // const roomListButton = document.createElement("button");
+            // roomListButton.setAttribute("id", data['name']);
+            // roomListButton.innerHTML = data['name'];
+            // //console.log("room created button id: " + roomListButton.id);
+            // roomListButton.addEventListener("click", () => {
+            //     joinRoom(data['name'])
+            // });
+            // roomListItem.appendChild(roomListButton);
+            // document.getElementById("availableRoomList").appendChild(roomListItem);
+        });
+        //login listener
+        socketio.on("user_added", function (data) {
+            document.getElementById('hello').innerHTML = "Hello <strong>" + data['name'] + "</strong>";
+            document.getElementById('functionality').style.display = "block";
+            let rm = data['room'];
+        });
+
+        //listener for when a user enters a room
+        socketio.on("room_entry", function (data) {
+            document.getElementById("ownerPrivileges").setAttribute("style", "display: none;");
+            document.getElementById('message').style.display = "block";
+            document.getElementById('currRoom').textContent = "Current room: " + data['name'];
+            //TODO how do we change the chatlog for the newly joined user?
+            //document.getElementById("chatlog").innerHTML = null;
+            console.log("room entry event " + JSON.stringify(data, null, 2));
+            //add user to list on page
+            const activeUserListNode = document.getElementById("activeUserList");
+            activeUserListNode.innerHTML = "";
+            data['activeUsers'].map((value, index) => {
+                console.log("user: " + index + ": " + value);
+                const activeUserLineItem = document.createElement("li");
+                activeUserLineItem.innerHTML = value;
+
+                activeUserListNode.appendChild(activeUserLineItem);
+            })
+            document.getElementById('joinRoomResult').textContent = "Succesfully joined Room!";
+            document.getElementById('message').style.display = "block";
+            if(data['owner'] == name) {
+                console.log("is owner of entered room");
+                document.getElementById("ownerPrivileges").setAttribute("style", "display: block;");
+            }
+            document.getElementById('chatlog').innerHTML="";
+        });
+        //listener for when a user enters a room
+        socketio.on("bad_room_entry", function (data) {
+            document.getElementById('joinRoomResult').textContent = "Bad join request, please try again: " + data["message"];
+        });
+        //listener for telling server to kick this user
+        socketio.on("getting_kicked", function (data) {
+            socketio.emit("kick_me", { name: data['name'] });
+        });
+        //listener for user actually getting kicked
+        socketio.on("room_kicked", function (data) {
+            document.getElementById('currRoom').textContent = "You have been kicked by " + data['name'];
+            document.getElementById("message").style.display = "none";
+        });
+        socketio.on("error", function (data) {
+            alert("Uh-oh! " + data["message"]);
+        });
+
+
+
+
+        //********************
+        //    FUNCTIONS
+        /*******************/
+        function nickName() {
+            name = document.getElementById('nickname').value;
+            socketio.emit("create_user", { name: name });
+
+        }
+        function kick() {
+            name = document.getElementById('kickUser').value;
+            socketio.emit("kick_user", { user: name });
+        }
+
+        function sendMessage() {
+            let msg = document.getElementById("message_input").value;
+            rm = document.getElementById("currRoom").textContent.split(": ")[1];
+            socketio.emit("message_to_server", { message: msg, room: rm });
+            document.getElementById("message_input").value = "";
+        }
+        function createRoom() {
+            //chatroom = document.getElementById('createRoom').value;
+            //TODO create a room object that containts the name, owner, list of blocked users, list of users, password
+            var roomPassword = document.getElementById("roomPassword").value;
+            isPasswordProtect = (roomPassword.length != 0);
+
+            socketio.emit("create_room", {
+                name: document.getElementById('createRoom').value,
+                //name: roomName,
+                owner: name,
+                blockedUsers: [],
+                activeUsers: [],
+                password: roomPassword,
+                isPasswordProtect: isPasswordProtect
+            })
+            document.getElementById("roomPassword").value = "";
+            document.getElementById("createRoom").value = "";
+            //document.getElementById('message').style.display = "block";
+        }
+        function joinRoom() {
+            rm = document.getElementById('joinRoom').value;
+            enteredPassword = document.getElementById('joinRoomPassword').value;
+            //console.log("joineRoom roomName: " + roomName);
+            socketio.emit("join_room", {
+                roomName: rm,
+                enteredPassword: enteredPassword
+            })
+            document.getElementById("joinRoomPassword").value = "";
+            document.getElementById("joinRoom").value = "";
+            //document.getElementById('message').style.display = "block";
+        }
+        //sends dm
+        function privateMessage() {
+            msg = document.getElementById("dmMessage").value;
+            receiver = document.getElementById("dmReceiver").value;
+            socketio.emit("send_dm", { message: msg, user: receiver });
+        }
+        //appends user to muted list
+        function mute() {
+            user = document.getElementById("muteUser").value;
+            li = document.createElement("li");
+            li.textContent = user;
+            mutedID++;
+            document.getElementById("mutedUsers").appendChild(li);
+            document.getElementById("muteUser").value = "";
+        }
+        //toggles button
+        function carlinFilter() {
+            if (filter) {
+                filter = false;
+                document.getElementById('carlinFilter').textContent = "On";
+            }
+            else {
+                filter = true;
+                document.getElementById('carlinFilter').textContent = "Off";
+            }
+        }
+        //removes user from muted list
+        function removeMuted() {
+            user = document.getElementById("unmute").value;
+            muteds = document.getElementById('mutedUsers').childNodes;
+            for (let i = 0; i < muteds.length; i++) {
+                if (muteds[i].textContent == user) {
+                    document.getElementById('mutedUsers').removeChild(muteds[i]);
+                }
+            }
+            document.getElementById("unmute").value = "";
+        }
+
+        function blockUser() {
+            blockedUsername = document.getElementById("blockUserInput").value;
+            socketio.emit("add_blocked_user", {"blockedUsername": blockedUsername});
+            document.getElementById("blockUserInput").value = "";
+        }
+        //function listRooms() {}
+
+    </script>
+</head>
+
+
+<body>
+    <div id="hello">
+        Nickname? <input type="text" id="nickname" />
+        <button onclick="nickName()">send</button>
+    </div>
+    <div id="functionality">
+        <div>
+            <h4>Create Room?</h4>
+            <label for="createRoom">Room Name</label>
+            <input type="text" id="createRoom" />
+            <br>
+            <label for="roomPassword">Password (*optional)</label>
+
+            <input type="text" id="roomPassword" />
+            <button onclick="createRoom()">
+                Create
+            </button>
+            <p id="roomCreatedResult"></p>
+
+            <h4>Join Room?</h4>
+            <ul id="availableRoomList"></ul>
+            <label for="joinRoom">Enter Room Name</label>
+            <input type="text" id="joinRoom" />
+            <br>
+            <label for="joinRoomPassword">Password (*optional)</label>
+            <input type="text" id="joinRoomPassword" />
+            <button onclick="joinRoom()">
+                Join
+            </button>
+            <p id="joinRoomResult"></p>
+            <h4>Send Private Message?</h4>
+            User Nickname?
+            <input type="text" id="dmReceiver" />
+            <br>
+            Post Message:
+            <input type="text" id="dmMessage" />
+            <button onclick="privateMessage()">Send</button><br>
+        </div>
+        <h3 id="currRoom"></h3>
+
+        <div id="message">
+            <h4>Active Users</h4>
+            <ul id="activeUserList"></ul>
+            Turn Carlin Filter:<button id="carlinFilter" onclick="carlinFilter()">On</button><br>
+            <h4>Muted Users</h4>
+            <ul id="mutedUsers"></ul><br>
+            Unmute User?<input type="text" id="unmute">
+            <button onclick="removeMuted()">Unmute</button>
+            <br>
+            Mute User?<input type="text" id="muteUser">
+            <button onclick="mute()">Mute</button>
+            <div id="ownerPrivileges">
+                <h4>Admin Actions</h4>
+                Kick User?<input type="text" id="kickUser">
+                <button onclick="kick()">Kick</button>
+                <br>
+                <label for="blockUserInput"> Block User?</label>
+                <input type="text" id="blockUserInput">
+                <button onclick="blockUser()">Block</button>
+            </div>
+            <br>
+            Message?<input type="text" id="message_input" />
+            <button onclick="sendMessage()">Send</button><br>
+
+        </div>
+
+    </div>
+    <div id="chatlog"></div>
+</body>
+
+</html>
